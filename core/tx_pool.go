@@ -84,9 +84,6 @@ var (
 	// than some meaningful limit a user might use. This is not a consensus error
 	// making the transaction invalid, rather a DOS protection.
 	ErrOversizedData = errors.New("oversized data")
-
-	// ErrBlockTimePrice ...
-	ErrBlockTimePrice = errors.New("invalid block time price")
 )
 
 var (
@@ -139,8 +136,9 @@ type TxPoolConfig struct {
 	Journal   string           // Journal of local transactions to survive node restarts
 	Rejournal time.Duration    // Time interval to regenerate the local transaction journal
 
-	PriceLimit  uint64 // Minimum gas price to enforce for acceptance into the pool
-	PriceBump   uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
+	PriceLimit uint64 // Minimum gas price to enforce for acceptance into the pool
+	PriceBump  uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
+
 	ParityLimit uint64 // Minimum parity to enforce for acceptance into the pool
 	ParityPrice uint64 // Price (in wei) for 1 parity unit
 
@@ -158,8 +156,9 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
 
-	PriceLimit:  1,
-	PriceBump:   10,
+	PriceLimit: 1,
+	PriceBump:  10,
+
 	ParityLimit: types.ParityMax,
 	ParityPrice: 13e15, // ~ 273 NTY ~ 0.01 USD for 21000 Tx Gas
 
@@ -190,6 +189,26 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 	if conf.ParityPrice < 0 {
 		log.Warn("Sanitizing invalid txpool pairty price", "provided", conf.PriceBump, "updated", DefaultTxPoolConfig.ParityPrice)
 		conf.PriceBump = DefaultTxPoolConfig.ParityPrice
+	}
+	if conf.AccountSlots < 1 {
+		log.Warn("Sanitizing invalid txpool account slots", "provided", conf.AccountSlots, "updated", DefaultTxPoolConfig.AccountSlots)
+		conf.AccountSlots = DefaultTxPoolConfig.AccountSlots
+	}
+	if conf.GlobalSlots < 1 {
+		log.Warn("Sanitizing invalid txpool global slots", "provided", conf.GlobalSlots, "updated", DefaultTxPoolConfig.GlobalSlots)
+		conf.GlobalSlots = DefaultTxPoolConfig.GlobalSlots
+	}
+	if conf.AccountQueue < 1 {
+		log.Warn("Sanitizing invalid txpool account queue", "provided", conf.AccountQueue, "updated", DefaultTxPoolConfig.AccountQueue)
+		conf.AccountQueue = DefaultTxPoolConfig.AccountQueue
+	}
+	if conf.GlobalQueue < 1 {
+		log.Warn("Sanitizing invalid txpool global queue", "provided", conf.GlobalQueue, "updated", DefaultTxPoolConfig.GlobalQueue)
+		conf.GlobalQueue = DefaultTxPoolConfig.GlobalQueue
+	}
+	if conf.Lifetime < 1 {
+		log.Warn("Sanitizing invalid txpool lifetime", "provided", conf.Lifetime, "updated", DefaultTxPoolConfig.Lifetime)
+		conf.Lifetime = DefaultTxPoolConfig.Lifetime
 	}
 	return conf
 }
@@ -727,7 +746,6 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 		log.Trace("Discarding already known transaction", "hash", hash)
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
-
 	// If the transaction fails basic validation, discard it
 	if err := pool.validateTx(tx, local); err != nil {
 		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
@@ -912,9 +930,6 @@ func (pool *TxPool) AddRemotes(txs []*types.Transaction) []error {
 
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
-	// Cache sender in transaction before obtaining lock (pool.signer is immutable)
-	types.Sender(pool.signer, tx)
-
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
@@ -933,11 +948,6 @@ func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 
 // addTxs attempts to queue a batch of transactions if they are valid.
 func (pool *TxPool) addTxs(txs []*types.Transaction, local bool) []error {
-	// Cache senders in transactions before obtaining lock (pool.signer is immutable)
-	for _, tx := range txs {
-		types.Sender(pool.signer, tx)
-	}
-
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 

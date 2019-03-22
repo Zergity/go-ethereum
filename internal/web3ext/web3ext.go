@@ -18,10 +18,10 @@
 package web3ext
 
 var Modules = map[string]string{
+	"accounting": Accounting_JS,
 	"admin":      Admin_JS,
 	"chequebook": Chequebook_JS,
 	"clique":     Clique_JS,
-	"dccs":       Dccs_JS,
 	"ethash":     Ethash_JS,
 	"debug":      Debug_JS,
 	"eth":        Eth_JS,
@@ -110,52 +110,6 @@ web3._extend({
 	]
 });
 `
-
-const Dccs_JS = `
-web3._extend({
-	property: 'dccs',
-	methods: [
-		new web3._extend.Method({
-			name: 'getSnapshot',
-			call: 'dccs_getSnapshot',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'getSnapshotAtHash',
-			call: 'dccs_getSnapshotAtHash',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'getSigners',
-			call: 'dccs_getSigners',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'getSignersAtHash',
-			call: 'dccs_getSignersAtHash',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'propose',
-			call: 'dccs_propose',
-			params: 2
-		}),
-		new web3._extend.Method({
-			name: 'discard',
-			call: 'dccs_discard',
-			params: 1
-		}),
-	],
-	properties: [
-		new web3._extend.Property({
-			name: 'proposals',
-			getter: 'dccs_proposals'
-		}),
-		]
-	});
-	`
 
 const Ethash_JS = `
 web3._extend({
@@ -747,6 +701,50 @@ web3._extend({
 				status.queued = web3._extend.utils.toDecimal(status.queued);
 				return status;
 			}
+		}),
+	]
+});
+`
+
+const Accounting_JS = `
+web3._extend({
+	property: 'accounting',
+	methods: [
+		new web3._extend.Property({
+			name: 'balance',
+			getter: 'account_balance'
+		}),
+		new web3._extend.Property({
+			name: 'balanceCredit',
+			getter: 'account_balanceCredit'
+		}),
+		new web3._extend.Property({
+			name: 'balanceDebit',
+			getter: 'account_balanceDebit'
+		}),
+		new web3._extend.Property({
+			name: 'bytesCredit',
+			getter: 'account_bytesCredit'
+		}),
+		new web3._extend.Property({
+			name: 'bytesDebit',
+			getter: 'account_bytesDebit'
+		}),
+		new web3._extend.Property({
+			name: 'msgCredit',
+			getter: 'account_msgCredit'
+		}),
+		new web3._extend.Property({
+			name: 'msgDebit',
+			getter: 'account_msgDebit'
+		}),
+		new web3._extend.Property({
+			name: 'peerDrops',
+			getter: 'account_peerDrops'
+		}),
+		new web3._extend.Property({
+			name: 'selfDrops',
+			getter: 'account_selfDrops'
 		}),
 	]
 });

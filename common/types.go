@@ -73,7 +73,7 @@ func (h Hash) Hex() string { return hexutil.Encode(h[:]) }
 
 // Plus increase a hash by one
 func (h Hash) Plus() Hash {
-	n := h.Big().Add(h.Big(), big.NewInt(1))
+	n := h.Big().Add(h.Big(), Big1)
 	return BigToHash(n)
 }
 
